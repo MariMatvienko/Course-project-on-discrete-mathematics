@@ -1,15 +1,15 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <codecvt> // ¤«ï locale() ¨ codecvt_utf8
+#include <codecvt> // для locale() и codecvt_utf8
 #include <iomanip>
 #include <vector>
 using namespace std;
 
-// Žá®¡¥­­®áâ¨ ¢ë¢®¤  ¢ ä ©«: ­¥®¡å®¤¨¬® ¨á¯®«ì§®¢ âì 'wstring' ¢¬¥áâ® 'string' ¨ ¤®¡ ¢«ïâì ¯¥à¥¤ â¥ªáâ®¬ L: L"’¥ªá¨".
+// Особенности вывода в файл: необходимо использовать 'wstring' вместо 'string' и добавлять перед текстом L: L"Текси".
 
 
-// ‚ë¢®¤¨â ¯®á«¥¤®¢ â¥«ì­®áâì ¢¥àè¨­ ­ ©¤¥­­®£® ¯ãâ¨ ¢ ª®­á®«ì
+// Выводит последовательность вершин найденного пути в консоль
 void PrintPath(int* path, int size)
 {
     for (int i = 0; i < size; i++)
@@ -19,7 +19,7 @@ void PrintPath(int* path, int size)
     cout << endl;
 }
 
-// ‚ë¢®¤¨â ¢áî â ¡«¨æã (¬ âà¨æã) â¥ªãé¥£® ¯®â®ª  ¢ ª®­á®«ì
+// Выводит всю таблицу (матрицу) текущего потока в консоль
 void PrintFlow(int** flow, int size)
 {
     cout << endl;
@@ -30,10 +30,10 @@ void PrintFlow(int** flow, int size)
     cout << endl;
 }
 
-// Š®£¤  ¯ãâì ­ ©¤¥­, íâ  äã­ªæ¨ï ã¢¥«¨ç¨¢ ¥â ¯®â®ª ¯® ¢á¥¬ ¥£® à¥¡à ¬
+// Когда путь найден, эта функция увеличивает поток по всем его ребрам
 void FoundedPath(int size, int** matrix, int** flow, int* path, int count)
 {
-    //cout << " ©¤¥­ ¯ãâì" << endl;
+    //cout << "Найден путь" << endl;
     //cout << "0 ->";
     for (int i = 0; i < count; i++)
     {
@@ -47,7 +47,7 @@ void FoundedPath(int size, int** matrix, int** flow, int* path, int count)
         if (l > mx)
             mx = l;
     }
-    //cout << "Œ ªá¨¬ã¬: " << mx << endl;
+    //cout << "Максимум: " << mx << endl;
     for (int i = 0; i < count - 1; i++)
     {
         flow[path[i]][path[i + 1]] += mx;
@@ -55,7 +55,7 @@ void FoundedPath(int size, int** matrix, int** flow, int* path, int count)
     //PrintFlow(flow, size);
 }
 
-// à®¢¥àï¥â, ­¥ ¯®á¥é «¨ «¨ ¬ë ã¦¥ íâã ¢¥àè¨­ã ¢ â¥ªãé¥¬ ¯ãâ¨ (çâ®¡ë ­¥ å®¤¨âì ¯® ªàã£ã)
+// Проверяет, не посещали ли мы уже эту вершину в текущем пути (чтобы не ходить по кругу)
 bool IsUnicVertex(int i, int* path, int count)
 {
     for (int j = 0; j < count; j++)
@@ -64,8 +64,8 @@ bool IsUnicVertex(int i, int* path, int count)
     return true;
 }
 
-// count - íâ® ª®«¨ç¥áâ¢® àñ¡¥à ¢ ¯ãâ¨ 
-// ˆé¥â ¯ãâ¨ ®â ­ ç «  ¤® ª®­æ , çâ®¡ë § ¯®«­¨âì ­ ç «ì­ë© ¯®â®ª
+// count - это количество рёбер в пути 
+// Ищет пути от начала до конца, чтобы заполнить начальный поток
 void SearchPath(int size, int** matrix, int** flow, int* path, int count, int cur)
 {
     path[count] = cur;
@@ -73,7 +73,7 @@ void SearchPath(int size, int** matrix, int** flow, int* path, int count, int cu
     //cout << "cur: " << cur << " count: " << count << endl;
     if (cur == size - 1)
     {
-        // ®¡à ¡®âª 
+        // обработка
         FoundedPath(size, matrix, flow, path, count + 1);
     }
 
@@ -89,19 +89,19 @@ void SearchPath(int size, int** matrix, int** flow, int* path, int count, int cu
         }
 }
 
-// ‡ ¯ãáª ¥â ¯à®æ¥áá ¯®áâà®¥­¨ï á ¬®£® ¯¥à¢®£® ¯®â®ª 
+// Запускает процесс построения самого первого потока
 void BuildFirstFlow(int size, int** flow, int** matrix)
 {
     int* path = new int[size];
     SearchPath(size, matrix, flow, path, 0, 0);
 }
 
-// false - ¢®§¢à é ¥âáï ¥áâì ­  ¯ãâ¨ ¥áâì ­ áëé¥­­ë¥ àñ¡à  ¨ ¯®â®ª ­¥«ì§ï ã¬¥­ìè¨âì. ‚ â ª®¬ á«ãç ¥ ¬ë ­ ©¤ñ¬ á«¥¤ãîé¨© ¯ãâì.
-// true - §­ ç¨â ­  ¯ãâ¨ ­¥â ­ áëé¥­­ëå àñ¡¥à ¨ ¬ë ¬®¦¥¬ ã¬¥­ìè¨âì ¯®â®ª. ®á«¥ ã¬¥­ìè¥­¨ï ¯®â®ª  § ¯ãáª ¥¬ ¯®¨áª § ­®¢®.
-// Š®£¤  ¯ãâì ­ ©¤¥­, íâ  äã­ªæ¨ï ã¬¥­ìè ¥â ¯®â®ª ¯® ­¥¬ã ­ áâ®«ìª®, ­ áª®«ìª® íâ® ¢®§¬®¦­®
+// false - возвращается есть на пути есть насыщенные рёбра и поток нельзя уменьшить. В таком случае мы найдём следующий путь.
+// true - значит на пути нет насыщенных рёбер и мы можем уменьшить поток. После уменьшения потока запускаем поиск заново.
+// Когда путь найден, эта функция уменьшает поток по нему настолько, насколько это возможно
 bool FoundedPathForDecrease(int size, int** matrix, int** flow, int* path, int count)
 {
-    //cout << " ©¤¥­ ¯ãâì" << endl;
+    //cout << "Найден путь" << endl;
     //cout << "0 ->";
     for (int i = 0; i < count; i++)
     {
@@ -128,11 +128,11 @@ bool FoundedPathForDecrease(int size, int** matrix, int** flow, int* path, int c
         //PrintFlow(flow, size);
         return true;
     }
-    //cout << "Œ ªá¨¬ã¬: " << mx << endl;
+    //cout << "Максимум: " << mx << endl;
 }
 
-// count - íâ® ª®«¨ç¥áâ¢® àñ¡¥à ¢ ¯ãâ¨ 
-// ˆé¥â ¯ãâ¨, ¯® ª®â®àë¬ ¬®¦­® ã¬¥­ìè¨âì ¯®â®ª, ­¥ ­ àãè ï ­¨¦­¨¥ £à ­¨æë
+// count - это количество рёбер в пути 
+// Ищет пути, по которым можно уменьшить поток, не нарушая нижние границы
 bool SearchPathForDecrease(int size, int** matrix, int** flow, int* path, int count, int cur)
 {
     path[count] = cur;
@@ -140,11 +140,11 @@ bool SearchPathForDecrease(int size, int** matrix, int** flow, int* path, int co
     //cout << "cur: " << cur << " count: " << count << endl;
     if (cur == size - 1)
     {
-        // ®¡à ¡®âª 
+        // обработка
         if (FoundedPathForDecrease(size, matrix, flow, path, count + 1))
         {
             cout << "true in SearchPathForDecrease" << endl;
-            return true; // ¯¥à¥§ ¯ãáâ¨âì ¯®¨áª
+            return true; // перезапустить поиск
         }
     }
     for (int i = 0; i < size; i++)
@@ -158,32 +158,32 @@ bool SearchPathForDecrease(int size, int** matrix, int** flow, int* path, int co
             if (SearchPathForDecrease(size, matrix, flow, path, count+1, i))
             {
                 //cout << "true in SearchPathForDecrease" << endl;
-                return true; // áâã¯¥­ç âë© á¯ãáª ¯® áâ¥ªã ¢ë§®¢®¢
+                return true; // ступенчатый спуск по стеку вызовов
             }
         }
-    return false; // ¯®«­ë© ¢ëå®¤ ¨§ à¥ªãàá¨¨: ¬ë § ª®­ç¨«¨
+    return false; // полный выход из рекурсии: мы закончили
 }
 
 
-// ‡ ¯ãáª ¥â ¯à®æ¥áá ã¬¥­ìè¥­¨ï ¯®â®ª  ¤® ¬¨­¨¬ «ì­® ¢®§¬®¦­®£® §­ ç¥­¨ï
+// Запускает процесс уменьшения потока до минимально возможного значения
 bool DecreaseFlow(int size, int** flow, int** matrix)
 {
     int* path = new int[size];
     return SearchPathForDecrease(size, matrix, flow, path, 0, 0);
 }
 
-/* ”ã­ªæ¨ï § ¯®«­¥­¨ï ¯¥à¢®­ ç «ì­®£® ¯®â®ª :
-¯¥à¥¤ ñ¬ ¢ äã­ªæ¨î ¤¢¥ ¬ âà¨æë: ¨§­ ç «ì­ ï ¬â à¨æ  á¬¥¦­®áâ¨ £à ä  ¨ ¯ãáâãî ¤«ï § ¯®«­¥­¨ï ¯®â®ª .
-Œë ¤®«¦­ë ¨¤â¨ ¯®¨áª®¬ ¢ è¨à¨­ã á ¨á¯®«ì§®¢ ­¨¥¬ ®ç¥à¥¤¨.  ©â¨ ¯ãâì, ­ ©â¨ ­  ­ñ¬ ¬ ªá¨¬ «ì­®¥ §­ ç¥­¨¥ ¨§ ¢á¥å àñ¡¥à
-¯®á«¥ ­ã¦­® ¯à¨¡ ¢¨âì ¯®â®ª ª ª ¦¤®¬ã à¥¡àã ¯ãâ¨ ­  íâ® §­ ç¥­¨¥. …á«¨ ­  ¯ãâ¨ ã¦¥ ¢á¥ àñ¡à  ­ áëé¥­­ë (ã¤®¢«¥â¢ àïîâ ãá«®¢¨î ® ­¨¦­¥© £à ­¨æ¥)
-¯¥à¥å®¤¨¬ ª á«¥¤ãîé¥¬ã ¯ãâ¨. Š®£¤  ¢á¥ ¯ãâ¨ ¡ã¤ãâ ¯à®©¤¥­ë - ¯¥¢à®­ ç «ì­ë© ¯®â®ª £®â®¢.
+/* Функция заполнения первоначального потока:
+передаём в функцию две матрицы: изначальная мтарица смежности графа и пустую для заполнения потока.
+Мы должны идти поиском в ширину с использованием очереди. Найти путь, найти на нём максимальное значение из всех рёбер
+после нужно прибавить поток к каждому ребру пути на это значение. Если на пути уже все рёбра насыщенны (удовлетваряют условию о нижней границе)
+переходим к следующему пути. Когда все пути будут пройдены - певроначальный поток готов.
 */
 
-/* ”ã­ªæ¨ï ã¬¥­ìè¥­¨ï ¯®â®ª 
-‘­®¢  ¯®¨áª ¢ è¨à¨­ã, ­ å®¤¨¬ ¯ãâì.  å®¤¨¬ ¤«ï ª ¦¤®£® à¥¡à :
-à §­¨æã ¬¥¦¤ã ¥£® ¯®â®ª®¬ ¨ ­¨¦­¥© £à ­¨æ¥ (â¥ à §­¨æ  ç¨á¥« ¢ ¤¢ãå ¬ âà¨æ å ­  ®¤¨­ ¨ â¥å ¦¥ ¬¥áâ å)
-§ ¯¨áë¢ ¥¬ íâ¨ §­ ç¥­¨ï ¢ ¢¥ªâ®à, çâ®¡ë ¯®á«¥ ­ ©â¨ ¬¨­¨¬ «ì­®¥ ¢ ­ñ¬ ç¨á«®. â® ç¨á«®, ­  ª®â®à®¥ ­  íâ®¬ ¯ãâ¨ ¬®¦­® ã¬¥­ìè¨âì ¯®â®ª ­  ¢á¥å àñ¡à å.
-®á«¥ ã¬¥­ìè¥­¨ï ¯®â®ª  ¯à®¤®¦ ¥¬ ¨áª âì ¯ãâ¨, ª®£¤  ¯ãâ¨ § ª®­ç âáï, ¯®â®ª ¡ã¤¥â ¬¨­¨¬ «ì­ë¬.
+/* Функция уменьшения потока
+Снова поиск в ширину, находим путь. Находим для каждого ребра:
+разницу между его потоком и нижней границе (те разница чисел в двух матрицах на один и тех же местах)
+записываем эти значения в вектор, чтобы после найти минимальное в нём число. Это число, на которое на этом пути можно уменьшить поток на всех рёбрах.
+После уменьшения потока продожаем искать пути, когда пути закончатся, поток будет минимальным.
 */
 int main(int argc, char* argv[])
 {
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
         flow[i] = new int[size];
         for (int j = 0; j < size; ++j) 
         {
-            flow[i][j] = 0; // ¯ãáâ ï ¬ âà¨æ : ¯®â®ª  ¯®ª  ­¥â
+            flow[i][j] = 0; // пустая матрица: потока пока нет
         }
     }
 
@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
     int flow_sum = 0;
     for (int i = 0; i < size; i++)
         flow_sum += flow[0][i];
-    cout << "Œ¨­¨¬ «ì­ë© ¯®â®ª: " << flow_sum << endl;
+    cout << "Минимальный поток: " << flow_sum << endl;
     wstring text2 = L"<Text>\nThe minimum flow is.\n";//, colors = L"<Vertex_Colors>\n";
 
     // Output:
