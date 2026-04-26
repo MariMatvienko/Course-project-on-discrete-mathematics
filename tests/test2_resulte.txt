@@ -1,0 +1,23 @@
+7
+0 18 12 1 0 0 0
+0 0 0 18 0 0 0
+0 0 0 12 0 0 0
+0 0 0 0 7 24 0
+0 0 0 0 0 0 7
+0 0 0 0 0 0 24
+0 0 0 0 0 0 0
+<Text>
+We construct a minimal flow based on a directed, weighted graph.
+Vertex numbered 0 is taken as the source, and the sink is the vertex with the highest number.
+The numbers assigned to the edges are treated as the minimum capacity of the respective edge.
+The minimum flow is.
+31<Positions>
+
+<Positions>
+0 68 290
+1 207 160
+2 187 404
+3 324 270
+4 442 148
+5 431 385
+6 590 273
