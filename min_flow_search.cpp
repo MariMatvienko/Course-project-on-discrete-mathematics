@@ -35,11 +35,13 @@ void FoundedPath(int size, int** matrix, int** flow, int* path, int count)
 {
     //cout << "Найден путь" << endl;
     //cout << "0 ->";
+    /*
     for (int i = 0; i < count; i++)
     {
         cout << path[i] << " -> ";
     }
     cout << endl;
+    */
     int mx = -1;
     for (int i = 0; i < count - 1; i++)
     {
@@ -69,8 +71,6 @@ bool IsUnicVertex(int i, int* path, int count)
 void SearchPath(int size, int** matrix, int** flow, int* path, int count, int cur)
 {
     path[count] = cur;
-    //printf("cur %d\n", cur);
-    //cout << "cur: " << cur << " count: " << count << endl;
     if (cur == size - 1)
     {
         // обработка
@@ -101,13 +101,6 @@ void BuildFirstFlow(int size, int** flow, int** matrix)
 // Когда путь найден, эта функция уменьшает поток по нему настолько, насколько это возможно
 bool FoundedPathForDecrease(int size, int** matrix, int** flow, int* path, int count)
 {
-    //cout << "Найден путь" << endl;
-    //cout << "0 ->";
-    for (int i = 0; i < count; i++)
-    {
-        cout << path[i] << " -> ";
-    }
-    cout << endl;
     int mn = 1e9;
     for (int i = 0; i < count - 1; i++)
     {
@@ -136,14 +129,13 @@ bool FoundedPathForDecrease(int size, int** matrix, int** flow, int* path, int c
 bool SearchPathForDecrease(int size, int** matrix, int** flow, int* path, int count, int cur)
 {
     path[count] = cur;
-    //printf("cur %d\n", cur);
     //cout << "cur: " << cur << " count: " << count << endl;
     if (cur == size - 1)
     {
         // обработка
         if (FoundedPathForDecrease(size, matrix, flow, path, count + 1))
         {
-            cout << "true in SearchPathForDecrease" << endl;
+            //cout << "true in SearchPathForDecrease" << endl;
             return true; // перезапустить поиск
         }
     }
@@ -164,8 +156,103 @@ bool SearchPathForDecrease(int size, int** matrix, int** flow, int* path, int co
     return false; // полный выход из рекурсии: мы закончили
 }
 
+// Обработка пути в остаточной сети
+bool FoundedPathForResidual(int size, int** ResidualNetwork, int** matrix, int** flow, int* path, int count)
+{
+    int mn = 1e9;
+    for (int i = 0; i < count - 1; i++)
+    {
+        if (ResidualNetwork[path[i]][path[i + 1]] < mn)
+            mn = ResidualNetwork[path[i]][path[i + 1]];
+    }
+    if (mn == 0)
+    {
+        return false;
+    } else 
+    {
+        for (int i = 0; i < count - 1; i++)
+        {
+            if (matrix[path[i]][path[i + 1]] != 0)
+            {
+                ResidualNetwork[path[i]][path[i + 1]] -= mn;
+                flow[path[i]][path[i + 1]] -= mn;
+            } else
+            {
+                ResidualNetwork[path[i]][path[i + 1]] += mn;
+                flow[path[i + 1]][path[i]] += mn;
+            }
+        }
+        //PrintFlow(flow, size);
+        return true;
+    }
+    //cout << "Максимум: " << mx << endl;
+}
 
-// Запускает процесс уменьшения потока до минимально возможного значения
+// count - это количество рёбер в пути 
+// Ищет пути, по которым можно уменьшить поток, не нарушая нижние границы
+// Это функция поиска в глубину для обработки остаточной сети
+bool SearchPathForResidual(int size, int** ResidualNetwork, int** matrix, int** flow, int* path, int count, int cur)
+{
+    path[count] = cur;
+    //cout << "cur: " << cur << " count: " << count << endl;
+    if (cur == size - 1)
+    {
+        // обработка
+        if (FoundedPathForResidual(size, ResidualNetwork, matrix, flow, path, count + 1))
+        {
+            //cout << "true in SearchPathForDecrease" << endl;
+            return true; // перезапустить поиск
+        }
+    }
+    for (int i = 0; i < size; i++)
+        if (IsUnicVertex(i, path, count))
+        {
+            if (ResidualNetwork[cur][i] == 0) continue;
+            if (SearchPathForDecrease(size, matrix, flow, path, count+1, i))
+            {
+                //cout << "true in SearchPathForDecrease" << endl;
+                return true; // ступенчатый спуск по стеку вызовов
+            }
+        }
+    return false; // полный выход из рекурсии: мы закончили
+}
+
+// Построение остаточной сети
+void ConstructionResidualNetwork(int size, int** ResidualNetwork, int** matrix, int** flow)
+{
+    
+    for (int i = 0; i < size; ++i) 
+    {
+        ResidualNetwork[i] = new int[size];
+        for (int j = 0; j < size; ++j) 
+        {
+            ResidualNetwork[i][j] = 0; // заполняем матрицу нулями, чтобы она не забилась мусорными значениями 
+        }
+    }
+    for (int i = 0; i < size; ++i) 
+    {
+        for (int j = 0; j < size; ++j) 
+        {
+            if (ResidualNetwork[i][j] != 0 || (flow[i][j] == 0 && matrix[i][j] == 0)) continue; // если ребро, которое мы до этого не обрабаотывали, уже не пустое => мы его заполнили ранее при обработке насыщенного ребра (третье условие ниже)
+            else if (flow[i][j] - matrix[i][j] > 0) // если ребро в потоке не насыщенное 
+            {
+                ResidualNetwork[i][j] = flow[i][j] - matrix[i][j];
+            } else if (flow[i][j] - matrix[i][j] == 0) // если ребро насыщенное, нужно развернуть его, те записать значение в ResidualNetwork[j][i]
+            {
+                ResidualNetwork[j][i] = matrix[i][j];
+            }
+        }
+    }
+}
+
+// Запускает процесс уменьшения потока до минимально возможного значения с помощью осттаочной сети
+bool DecreaseFlowForResidual(int size, int** ResidualNetwork, int** flow, int** matrix)
+{
+    int* path = new int[size];
+    return SearchPathForResidual(size, ResidualNetwork, matrix, flow, path, 0, 0);
+}
+
+// Запускает процесс уменьшения потока
 bool DecreaseFlow(int size, int** flow, int** matrix)
 {
     int* path = new int[size];
@@ -189,7 +276,7 @@ int main(int argc, char* argv[])
 {
     // Input:    
     wifstream in(argv[1]);
-    //ifstream in("D:\\test.txt");
+    //wifstream in("D:\\test.txt");
     int size = 0, i, j;
     in >> size;
     int** matrix = new int* [size];
@@ -226,11 +313,14 @@ int main(int argc, char* argv[])
     BuildFirstFlow(size, flow, matrix);
     while (DecreaseFlow(size, flow, matrix))
     {};
-    PrintFlow(flow, size);
+    int** ResidualNetwork = new int*[size];
+    ConstructionResidualNetwork(size, ResidualNetwork, matrix, flow);
+    while (DecreaseFlowForResidual(size, ResidualNetwork, flow, matrix))
+    {};
     int flow_sum = 0;
     for (int i = 0; i < size; i++)
         flow_sum += flow[0][i];
-    cout << "Минимальный поток: " << flow_sum << endl;
+    //cout << "Минимальный поток: " << flow_sum << endl;
     wstring text2 = L"<Text>\nThe minimum flow is.\n";//, colors = L"<Vertex_Colors>\n";
 
     // Output:
